@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>宠物健康本 · 高保真交互原型</title>
+<style>
+/* ============ 设计令牌 ============ */
+:root{
+  --paper:#F6F1EA;          /* 舞台底色：暖纸 */
+  --bg:#FAF7F2;             /* App 底色 */
+  --card:#FFFFFF;
+  --ink:#2A2520;
+  --ink-2:#6E655C;
+  --ink-3:#A99E93;
+  --hairline:#EDE6DB;
+  --accent:#E8764B;         /* 柿橙：主行动 */
+  --accent-soft:#FCEBE3;
+  --green:#3D9970;
+  --green-soft:#E4F2EC;
+  --amber:#D98E2B;
+  --amber-soft:#FAF0DD;
+  --red:#D95548;
+  --red-soft:#FBE7E5;
+  --blue:#4C86D9;
+  --shadow:0 10px 30px rgba(60,42,28,.10);
+  --r-lg:20px;
+  --r-md:14px;
+  --r-sm:10px;
+  --safe-b:86px;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","PingFang SC","Helvetica Neue","Microsoft YaHei",sans-serif;
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:
+    radial-gradient(1200px 600px at 80% -10%, #FBF4EA 0%, transparent 60%),
+    radial-gradient(900px 500px at 0% 110%, #F0E6D9 0%, transparent 55%),
+    var(--paper);
+  color:var(--ink);
+  -webkit-font-smoothing:antialiased;
+}
+button{font-family:inherit;border:none;background:none;color:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:15px;color:var(--ink)}
+ol,ul{list-style:none}
+
+/* ============ 舞台布局 ============ */
+.stage{min-height:100vh;display:flex;align-items:center;justify-content:center;gap:40px;padding:32px 24px}
+/* 视口较矮时整体缩放设备，避免页面级滚动条 */
+@media (max-height:1000px){.device-wrap{transform:scale(.86)}}
+@media (max-height:880px){.device-wrap{transform:scale(.74)}}
+@media (max-height:750px){.device-wrap{transform:scale(.64)}}
+/* SVG 图标通用对齐 */
+.ic{display:inline-block;vertical-align:-.18em;flex:none}
+
+/* ---- 桌面验证台 ---- */
+.console{width:330px;flex:none;max-height:calc(100vh - 64px);overflow:auto}
+.console-brand{display:flex;gap:12px;align-items:center;margin-bottom:24px}
+.console-logo{font-size:34px;line-height:1;color:var(--accent);display:grid;place-items:center}
+.console-brand h1{font-size:20px;letter-spacing:.5px}
+.console-brand p{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+.console-section{background:rgba(255,255,255,.72);border:1px solid var(--hairline);border-radius:var(--r-lg);padding:16px 16px 14px;margin-bottom:14px;backdrop-filter:blur(6px)}
+.console-section h2{font-size:12px;letter-spacing:1.5px;color:var(--ink-3);font-weight:700;margin-bottom:10px}
+.flow-list li{margin-bottom:4px}
+.flow-list button{width:100%;text-align:left;font-size:13.5px;padding:9px 10px;border-radius:var(--r-sm);color:var(--ink-2);line-height:1.35;transition:.15s}
+.flow-list button:hover{background:var(--accent-soft);color:var(--accent)}
+.demo-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.demo-label{font-size:13px;color:var(--ink-2)}
+#demoDate{font-size:15px;font-variant-numeric:tabular-nums}
+.demo-buttons{display:flex;flex-wrap:wrap;gap:8px}
+.demo-buttons.stacked{flex-direction:column;margin-top:12px}
+.chip{font-size:13px;padding:7px 12px;border-radius:999px;background:#fff;border:1px solid var(--hairline);color:var(--ink-2);transition:.15s}
+.chip:active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.chip:hover{border-color:var(--accent);color:var(--accent)}
+.chip.ghost{background:transparent}
+.demo-hint{font-size:12px;color:var(--ink-3);line-height:1.5;margin-top:10px}
+.action-btn{width:100%;padding:11px;border-radius:var(--r-md);background:var(--ink);color:#fff;font-size:14px;font-weight:600;transition:.15s}
+.action-btn:hover{background:#000}
+.action-btn.ghost{background:transparent;color:var(--red);border:1px solid var(--red-soft)}
+.action-btn.ghost:hover{background:var(--red-soft)}
+.console-section.note ul{list-style:disc;padding-left:16px}
+.console-section.note li{font-size:12px;color:var(--ink-2);line-height:1.65;margin-bottom:4px}
+
+/* ---- 设备框 ---- */
+.device-wrap{display:flex;flex-direction:column;align-items:center;gap:12px}
+.device{
+  position:relative;width:390px;height:800px;border-radius:52px;
+  background:#1C1917;padding:11px;
+  box-shadow:0 40px 80px -20px rgba(80,55,30,.35),0 0 0 2px #3A332D inset;
+}
+.device-caption{font-size:12px;color:var(--ink-3)}
+.screen{position:relative;width:100%;height:100%;border-radius:42px;background:var(--bg);overflow:hidden}
+.island{position:absolute;top:22px;left:50%;transform:translateX(-50%);width:122px;height:34px;background:#000;border-radius:20px;z-index:60}
+.statusbar{position:absolute;top:0;left:0;right:0;height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 32px 0 36px;font-size:15px;font-weight:600;z-index:55;color:var(--ink)}
+.sb-time{padding-top:4px}
+.sb-icons{display:flex;gap:6px;align-items:center;padding-top:4px;color:var(--ink)}
+.home-indicator{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:var(--ink);opacity:.85;z-index:65;pointer-events:none}
+
+/* ============ App 通用 ============ */
+#screen{height:100%;overflow-y:auto;overflow-x:hidden;scrollbar-width:none}
+#screen::-webkit-scrollbar{display:none}
+.page{min-height:100%;padding:60px 18px var(--safe-b);animation:pageIn .28s ease}
+@keyframes pageIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.large-title{font-size:30px;font-weight:800;letter-spacing:.3px}
+.large-title .sub{display:block;font-size:13px;font-weight:500;color:var(--ink-3);margin-top:4px;letter-spacing:0}
+.section-title{font-size:13px;font-weight:700;color:var(--ink-3);letter-spacing:1px;margin:22px 4px 10px;text-transform:uppercase}
+
+.card{background:var(--card);border-radius:var(--r-lg);padding:16px;box-shadow:0 2px 12px rgba(90,70,45,.05)}
+.card + .card{margin-top:12px}
+.hairline{height:1px;background:var(--hairline);margin:12px 0}
+.row{display:flex;align-items:center;gap:12px}
+.row.between{justify-content:space-between}
+.muted{color:var(--ink-2)}
+.tiny{font-size:12px;color:var(--ink-3)}
+.num{font-variant-numeric:tabular-nums}
+
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:15px;border-radius:16px;font-size:16px;font-weight:700;background:var(--accent);color:#fff;transition:transform .12s,opacity .12s}
+.btn:active{transform:scale(.98)}
+.btn.secondary{background:var(--accent-soft);color:var(--accent)}
+.btn.ghost{background:#fff;border:1.5px solid var(--hairline);color:var(--ink)}
+.btn.small{padding:10px 14px;font-size:14px;border-radius:12px;width:auto}
+.btn:disabled{opacity:.5}
+
+.badge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px}
+.badge.ok{background:var(--green-soft);color:var(--green)}
+.badge.warn{background:var(--amber-soft);color:var(--amber)}
+.badge.due{background:var(--red-soft);color:var(--red)}
+.badge.info{background:#EAF1FB;color:var(--blue)}
+
+/* ---- 宠物 chips ---- */
+.pet-chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 6px;scrollbar-width:none}
+.pet-chips::-webkit-scrollbar{display:none}
+.pet-chip{flex:none;display:flex;align-items:center;gap:7px;padding:7px 14px 7px 8px;border-radius:999px;background:#fff;border:1.5px solid var(--hairline);font-size:14px;font-weight:600;color:var(--ink-2);transition:.15s}
+.pet-chip.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.pet-chip .avatar{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:15px}
+.pet-chip.add{border-style:dashed;color:var(--ink-3)}
+
+.avatar{border-radius:50%;display:grid;place-items:center;flex:none;user-select:none}
+.pet-chip .avatar{width:22px;height:22px}
+.avatar.cat{background:#FBE3D2;color:#D96C3F}
+.avatar.dog{background:#E3EDDA;color:#7A9B63}
+.avatar.other{background:#E7E4F0;color:#8E7BB8}
+.avatar.lg{width:58px;height:58px;font-size:30px}
+.avatar.md{width:42px;height:42px;font-size:22px}
+/* 紧凑宠物卡 + 资料图标按钮 */
+.pet-card{background:var(--card);border-radius:var(--r-lg);padding:10px 12px;box-shadow:0 2px 12px rgba(90,70,45,.05);align-items:center;gap:10px}
+.pet-card .pc-name{font-size:15.5px;font-weight:800}
+.icon-btn{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none}
+
+/* ---- 紧急提醒横幅 ---- */
+.urgent{border-radius:var(--r-lg);padding:20px 18px;color:#fff;position:relative;overflow:hidden;box-shadow:0 12px 26px rgba(60,42,28,.16)}
+.urgent.due{background:linear-gradient(135deg,#E86353,#D95548);box-shadow:0 12px 26px rgba(217,85,72,.32)}
+.urgent.warn{background:linear-gradient(135deg,#E8A33D,#D98E2B);box-shadow:0 12px 26px rgba(217,142,43,.30)}
+.urgent.ok{background:var(--green-soft);color:var(--green);box-shadow:none;padding:14px 16px}
+.urgent.ok h3{font-size:15px}
+.urgent.ok p{opacity:.8}
+.urgent.ok .u-emoji{color:rgba(61,153,112,.22)}
+.urgent.ok .u-actions button{background:rgba(61,153,112,.12);color:var(--green);backdrop-filter:none}
+.urgent.ok .u-actions button.primary{background:var(--green);color:#fff}
+.urgent h3{font-size:18px;font-weight:800}
+.urgent p{font-size:13px;opacity:.92;margin-top:3px;line-height:1.45}
+.urgent .u-actions{display:flex;gap:8px;margin-top:13px}
+.urgent .u-actions button{flex:1;padding:9px;border-radius:11px;font-size:13.5px;font-weight:700;background:rgba(255,255,255,.22);color:#fff;backdrop-filter:blur(4px)}
+.urgent .u-actions button.primary{background:#fff;color:var(--ink)}
+.urgent .u-emoji{position:absolute;right:12px;top:10px;color:rgba(255,255,255,.35)}
+
+.notify-denied{background:var(--amber-soft);border:1px solid #EEDCB8;border-radius:var(--r-md);padding:11px 13px;font-size:12.5px;color:#8A5A17;line-height:1.5;margin-bottom:12px;display:flex;gap:8px;align-items:center}
+
+/* ---- 时间线 ---- */
+.tl{position:relative;padding-left:6px}
+.tl-item{position:relative;padding:0 0 16px 30px}
+.tl-item:before{content:"";position:absolute;left:7px;top:6px;bottom:-2px;width:2px;background:var(--hairline)}
+.tl-item:last-child:before{display:none}
+.tl-dot{position:absolute;left:0;top:2px;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--hairline)}
+.tl-dot.vaccine{background:var(--blue)}
+.tl-dot.deworm{background:var(--green)}
+.tl-dot.visit{background:var(--amber)}
+.tl-dot.weight{background:#8E7BB8}
+.tl-dot.due{background:var(--red)}
+.tl-card{background:#fff;border-radius:var(--r-md);padding:13px 14px;box-shadow:0 2px 10px rgba(90,70,45,.05);position:relative}
+.tl-del{position:absolute;top:6px;right:8px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;color:var(--ink-3);opacity:0;transition:.15s}
+.tl-card:hover .tl-del,.tl-del:focus-visible{opacity:1;background:var(--red-soft);color:var(--red)}
+@media (hover:none){.tl-del{opacity:.45}}
+.tl-card .tl-name{font-size:15px;font-weight:700}
+.tl-card .tl-meta{font-size:12.5px;color:var(--ink-2);margin-top:3px;line-height:1.5}
+.tl-name .ic{color:var(--ink-3);vertical-align:-2px;margin-right:2px}
+.tl-thumb{width:52px;height:52px;border-radius:10px;object-fit:cover;border:1px solid var(--hairline);flex:none}
+
+.empty{text-align:center;padding:56px 24px}
+.empty .paw{font-size:46px;color:var(--ink-3);opacity:.55}
+.empty h3{font-size:16px;margin:12px 0 4px}
+.empty p{font-size:13px;color:var(--ink-3);line-height:1.5;margin-bottom:18px}
+
+/* ---- 底部 Tab ---- */
+.tabbar{position:absolute;left:11px;right:11px;bottom:11px;height:72px;background:rgba(255,255,255,.88);backdrop-filter:blur(18px);border-top:1px solid var(--hairline);border-radius:0 0 38px 38px;display:flex;z-index:50;padding-bottom:8px}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10.5px;color:var(--ink-3);font-weight:600}
+.tab.active{color:var(--accent)}
+.tab svg{width:24px;height:24px}
+.tab-fab{width:54px;height:54px;margin-top:-22px;border-radius:50%;background:linear-gradient(135deg,#EF8A62,#E8764B);display:grid;place-items:center;color:#fff;box-shadow:0 8px 18px rgba(232,118,75,.45);transition:transform .12s}
+.tab-fab:active{transform:scale(.92) rotate(90deg)}
+
+/* ============ 引导页 ============ */
+.onboard{height:100%;display:flex;flex-direction:column;padding:72px 28px 36px;background:linear-gradient(180deg,#FDF6EF 0%,#FAF7F2 55%)}
+.onboard .hero{flex:1;display:flex;flex-direction:column;justify-content:center;text-align:center}
+.onboard .hero-emoji{font-size:76px;color:var(--accent);display:flex;justify-content:center;animation:float 3.2s ease-in-out infinite}
+.pillar .e{color:var(--accent);display:flex;justify-content:center}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.onboard h1{font-size:28px;font-weight:800;margin:22px 0 10px;line-height:1.3}
+.onboard .lead{font-size:14.5px;color:var(--ink-2);line-height:1.7}
+.onboard .pillars{display:flex;gap:10px;margin:26px 0 8px}
+.onboard .pillar{flex:1;background:#fff;border-radius:16px;padding:14px 8px;box-shadow:0 2px 10px rgba(90,70,45,.05)}
+.onboard .pillar .e{font-size:26px}
+.onboard .pillar b{display:block;font-size:13px;margin:7px 0 3px}
+.onboard .pillar span{font-size:11px;color:var(--ink-3);line-height:1.4;display:block}
+.onboard .foot{padding-bottom:18px}
+.onboard .fine{text-align:center;font-size:11px;color:var(--ink-3);margin-top:12px;line-height:1.6}
+
+/* ============ 表单 ============ */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;font-weight:600;color:var(--ink-2);margin:0 4px 7px}
+.field input[type=text],.field input[type=date],.field input[type=number],.field select,.field textarea{
+  width:100%;padding:13px 14px;border-radius:14px;border:1.5px solid var(--hairline);background:#fff;outline:none;transition:border .15s}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field textarea{resize:none;height:72px}
+/* 中文化日期字段 */
+.date-field{position:relative}
+.date-display{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:14px;border:1.5px solid var(--hairline);background:#fff;font-size:15px;color:var(--ink);text-align:left;transition:border .15s}
+.date-display:active{border-color:var(--accent)}
+.date-display .ic{color:var(--ink-3)}
+.date-display .ph{color:var(--ink-3)}
+input.vh{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px;left:0;bottom:0}
+.seg{display:flex;background:#F1ECE3;border-radius:13px;padding:3px;gap:2px}
+.seg button{flex:1;padding:9px;border-radius:10px;font-size:13.5px;font-weight:600;color:var(--ink-2);display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.seg button.active{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.choice-row{display:flex;gap:8px;flex-wrap:wrap}
+.choice{padding:9px 16px;border-radius:999px;background:#fff;border:1.5px solid var(--hairline);font-size:13.5px;font-weight:600;color:var(--ink-2)}
+.choice.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+
+/* ---- 导航栏（内页，吸顶） ---- */
+.navi{position:sticky;top:54px;left:0;right:0;height:46px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;z-index:40;margin:0 -18px 8px;background:var(--bg)}
+.navi.navi-dark{margin:0;background:#211D1A;padding:0 22px}
+.navi .nv-title{font-size:16px;font-weight:700}
+.navi button{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-size:17px;color:var(--ink)}
+.navi .nv-action{width:auto;padding:0 10px;height:34px;font-size:14.5px;font-weight:600;color:var(--accent)}
+.page.navi-page{padding-top:108px}
+
+/* ---- 拍照识别 ---- */
+.cam{height:100%;background:#211D1A;color:#fff;display:flex;flex-direction:column;padding:108px 22px 36px}
+.cam-frame{flex:1;border-radius:26px;border:2px dashed rgba(255,255,255,.35);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;overflow:hidden;position:relative;background:
+  repeating-linear-gradient(45deg,rgba(255,255,255,.03) 0 12px,transparent 12px 24px)}
+.cam-frame.has-img{border-style:solid;border-color:rgba(255,255,255,.15)}
+.cam-frame img{width:100%;height:100%;object-fit:contain}
+.cam-frame .cam-emoji{font-size:58px;color:#E9DFC8;display:flex;justify-content:center}
+.cam-frame p{font-size:13.5px;opacity:.7;text-align:center;line-height:1.6;padding:0 24px}
+.cam-actions{margin-top:18px;display:flex;flex-direction:column;gap:10px}
+.cam .btn.secondary{background:rgba(255,255,255,.14);color:#fff}
+.scan-line{position:absolute;left:8%;right:8%;height:3px;border-radius:3px;background:linear-gradient(90deg,transparent,#7FE0B0,transparent);box-shadow:0 0 16px #7FE0B0;animation:scan 1.6s ease-in-out infinite}
+@keyframes scan{0%{top:8%}50%{top:88%}100%{top:8%}}
+.scan-status{position:absolute;bottom:16px;left:0;right:0;text-align:center;font-size:13px;color:#BFE8D2;font-weight:600;letter-spacing:1px}
+
+/* ---- 识别草稿确认 ---- */
+.ocr-thumb{width:64px;height:64px;border-radius:12px;object-fit:cover;border:1px solid var(--hairline)}
+.auto-card{background:linear-gradient(135deg,#F2FAF6,#E9F5EF);border:1.5px solid #BFE2D0;border-radius:var(--r-lg);padding:16px;margin:14px 0}
+.auto-card .auto-label{font-size:12px;font-weight:700;color:var(--green);letter-spacing:1px}
+.auto-card .auto-date{font-size:30px;font-weight:800;color:var(--green);margin:4px 0 2px;font-variant-numeric:tabular-nums}
+.auto-card p{font-size:12px;color:var(--green);opacity:.85;line-height:1.5}
+.ocr-tag{display:inline-flex;align-items:center;gap:5px;background:#EAF1FB;color:var(--blue);font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:999px;margin-bottom:12px}
+
+/* ---- 成功弹层 ---- */
+.success-pop{text-align:center;padding:30px 24px 8px}
+.success-pop .check{width:84px;height:84px;margin:0 auto 18px;border-radius:50%;background:var(--green-soft);display:grid;place-items:center;animation:pop .4s cubic-bezier(.2,1.4,.4,1)}
+.success-pop .check svg{width:44px;height:44px}
+@keyframes pop{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+.success-pop h3{font-size:19px;margin-bottom:6px}
+.success-pop p{font-size:13.5px;color:var(--ink-2);line-height:1.6}
+.success-next{background:var(--amber-soft);border-radius:14px;padding:13px;margin:16px 0 6px;font-size:13.5px;color:#8A5A17;line-height:1.6;text-align:left}
+.success-next b{color:var(--amber)}
+
+/* ============ 弹层 Sheet ============ */
+.sheet-mask{position:absolute;inset:0;background:rgba(30,22,15,.42);z-index:70;animation:fade .2s ease;border-radius:42px}
+.sheet{position:absolute;left:11px;right:11px;bottom:11px;max-height:82%;background:var(--bg);border-radius:28px 28px 0 0;z-index:71;padding:8px 18px 30px;overflow-y:auto;animation:sheetUp .32s cubic-bezier(.2,.85,.25,1);scrollbar-width:none}
+.sheet::-webkit-scrollbar{display:none}
+@keyframes fade{from{opacity:0}}
+@keyframes sheetUp{from{transform:translateY(100%)}to{transform:none}}
+.sheet-handle{width:40px;height:5px;border-radius:3px;background:#DCD3C6;margin:6px auto 16px}
+.sheet h3{font-size:18px;font-weight:800;margin:2px 2px 14px}
+
+.action-list{background:#fff;border-radius:16px;overflow:hidden}
+.action-list button{width:100%;display:flex;align-items:center;gap:13px;padding:15px 16px;font-size:15.5px;text-align:left;border-bottom:1px solid var(--hairline)}
+.action-list button:last-child{border-bottom:none}
+.action-list button:active{background:#F7F2EA}
+.action-list .al-icon{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:17px;flex:none}
+.action-list .al-icon.v{background:#EAF1FB;color:var(--blue)}
+.action-list .al-icon.d{background:var(--green-soft);color:var(--green)}
+.action-list .al-icon.m{background:var(--amber-soft);color:var(--amber)}
+.action-list .al-icon.w{background:#EFEAF8;color:#8E7BB8}
+.action-list small{display:block;font-size:12px;color:var(--ink-3);margin-top:2px}
+
+/* ============ 出示模式 ============ */
+.present{position:absolute;inset:0;z-index:80;background:#FBF8F3;padding:10px 24px 40px;overflow-y:auto;animation:pageIn .3s ease}
+/* 遮罩内自带状态栏，与设备状态栏视觉一致 */
+.ov-statusbar{display:flex;align-items:center;justify-content:space-between;padding:6px 8px 18px;font-size:15px;font-weight:600;color:var(--ink)}
+.ov-statusbar .sb-icons{display:inline-flex;gap:5px;align-items:center}
+.present-head{display:flex;align-items:center;gap:14px;padding-bottom:16px;border-bottom:2px solid var(--ink)}
+.present-head h2{font-size:24px;font-weight:800;letter-spacing:2px}
+.present-head .p-sub{font-size:12.5px;color:var(--ink-2);margin-top:3px}
+.present table{width:100%;border-collapse:collapse;margin-top:8px}
+.present th{font-size:12px;color:var(--ink-3);text-align:left;padding:10px 6px;border-bottom:1.5px solid var(--ink);letter-spacing:1px}
+.present td{font-size:14.5px;padding:13px 6px;border-bottom:1px solid var(--hairline);vertical-align:top}
+.present td.date{font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums}
+.present td:nth-child(3),.present th:nth-child(3){max-width:76px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;color:var(--ink-2)}
+.present .p-disclaimer{margin-top:22px;padding-top:14px;border-top:2px solid var(--ink);font-size:11.5px;color:var(--ink-2);line-height:1.7;text-align:center}
+.present .p-stamp{margin:18px auto 0;width:fit-content;border:2px solid var(--red);color:var(--red);border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;transform:rotate(-6deg);opacity:.8;letter-spacing:2px}
+
+/* ============ 付费墙 ============ */
+.paywall{position:absolute;inset:0;z-index:80;background:linear-gradient(180deg,#FDF1E8,#FAF7F2 45%);padding:10px 24px 34px;display:flex;flex-direction:column;animation:pageIn .3s ease;overflow-y:auto}
+.paywall .pw-close{position:absolute;top:12px;right:20px;width:36px;height:36px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+.paywall .pw-emoji{font-size:52px;text-align:center;color:var(--accent);display:flex;justify-content:center}
+.paywall h2{font-size:25px;font-weight:800;text-align:center;margin:14px 0 6px}
+.paywall .pw-lead{text-align:center;font-size:13.5px;color:var(--ink-2);line-height:1.6;margin-bottom:20px}
+.pw-feats{background:#fff;border-radius:20px;padding:6px 18px;margin-bottom:18px}
+.pw-feat{display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--hairline);font-size:14px}
+.pw-feat:last-child{border-bottom:none}
+.pw-feat .tick{width:24px;height:24px;border-radius:50%;background:var(--green-soft);color:var(--green);display:grid;place-items:center;font-size:13px;flex:none;font-weight:800}
+.pw-feat small{display:block;color:var(--ink-3);font-size:12px;margin-top:2px}
+.pw-price{text-align:center;margin-bottom:14px}
+.pw-price .big{font-size:40px;font-weight:800}
+.pw-price .once{font-size:13px;color:var(--green);font-weight:700;letter-spacing:1px}
+.pw-foot{margin-top:auto;padding-top:10px}
+.pw-foot .fine{font-size:10.5px;color:var(--ink-3);text-align:center;margin-top:10px;line-height:1.6}
+.restore{display:block;margin:10px auto 0;font-size:13px;color:var(--ink-2);text-decoration:underline}
+
+/* ---- 小组件预览 ---- */
+.widget-mock{background:linear-gradient(160deg,#4A4138,#2E2823);border-radius:26px;padding:18px;display:flex;gap:14px;justify-content:center;align-items:center;min-height:170px}
+.widget-card{width:148px;height:148px;border-radius:20px;background:#fff;padding:14px;display:flex;flex-direction:column;position:relative;overflow:hidden}
+.widget-card.sm{width:70px;height:70px;border-radius:16px;padding:10px;align-items:center;justify-content:center;text-align:center}
+.widget-card .w-top{font-size:11px;color:var(--ink-3);font-weight:700;letter-spacing:.5px}
+.widget-card .w-pet{font-size:13px;font-weight:700;margin-top:8px}
+.widget-card .w-big{font-size:26px;font-weight:800;margin-top:auto;color:var(--accent)}
+.widget-card .w-name{font-size:11px;color:var(--ink-2)}
+.widget-lock{position:absolute;inset:0;background:rgba(255,255,255,.55);backdrop-filter:blur(2px);display:grid;place-items:center;font-size:13px;font-weight:700;color:var(--ink-2);gap:4px}
+
+/* ---- 推送横幅 ---- */
+.push-banner{position:absolute;top:62px;left:22px;right:22px;background:rgba(250,248,245,.92);backdrop-filter:blur(20px);border-radius:18px;padding:12px 14px;display:flex;gap:11px;z-index:90;box-shadow:0 12px 30px rgba(60,42,28,.22);animation:pushIn .5s cubic-bezier(.2,1.1,.3,1)}
+@keyframes pushIn{from{transform:translateY(-130%)}to{transform:none}}
+.push-icon{width:38px;height:38px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-size:20px}
+.push-head{display:flex;justify-content:space-between;font-size:12.5px;font-weight:700}
+.push-head .push-time{color:var(--ink-3);font-weight:500}
+.push-body p{font-size:13px;color:var(--ink-2);margin-top:2px;line-height:1.4}
+
+/* ---- Toast ---- */
+.toast{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);background:rgba(35,30,26,.92);color:#fff;font-size:13.5px;padding:11px 20px;border-radius:999px;z-index:95;white-space:nowrap;animation:fade .2s ease}
+
+/* ---- 设置列表 ---- */
+.set-group{background:#fff;border-radius:16px;overflow:hidden;margin-bottom:12px}
+.set-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--hairline);font-size:14.5px}
+.set-item:last-child{border-bottom:none}
+.set-item .si-icon{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;font-size:15px;background:var(--accent-soft);color:var(--accent)}
+.set-item .si-val{margin-left:auto;font-size:13px;color:var(--ink-3)}
+.toggle{width:46px;height:28px;border-radius:999px;background:#DCD6CC;position:relative;transition:.2s;flex:none}
+.toggle:after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:.2s}
+.toggle.on{background:var(--green)}
+.toggle.on:after{left:21px}
+
+/* ============ 响应式 ============ */
+@media (max-width:900px){
+  .stage{flex-direction:column-reverse;gap:18px;padding:16px 12px 40px}
+  .console{width:100%;max-width:390px;max-height:none;order:2}
+  .device{transform:scale(.92);transform-origin:top center;margin-bottom:-58px}
+}
+@media (max-width:400px){
+  .device{transform:scale(.82);margin-bottom:-128px}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+
+</style>
+</head>
+<body>
+
+<div class="stage">
+
+  <!-- 桌面端验证台 -->
+  <aside class="console" id="console">
+    <div class="console-brand">
+      <span class="console-logo"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13.4c2.6 0 5.4 1.9 5.4 4.3 0 1.5-1.1 2.6-2.7 2.6-1 0-1.8-.4-2.7-.4s-1.7.4-2.7.4c-1.6 0-2.7-1.1-2.7-2.6 0-2.4 2.8-4.3 5.4-4.3z"/><circle cx="5.3" cy="10.4" r="1.8"/><circle cx="9.2" cy="6.6" r="1.9"/><circle cx="14.8" cy="6.6" r="1.9"/><circle cx="18.7" cy="10.4" r="1.8"/></svg></span>
+      <div>
+        <h1>宠物健康本</h1>
+        <p>高保真交互原型 · M0 / P0</p>
+      </div>
+    </div>
+
+    <div class="console-section">
+      <h2>核心流程直达</h2>
+      <ol class="flow-list" id="flowList">
+        <li><button data-flow="onboarding">① 首次启动 · 建立宠物档案</button></li>
+        <li><button data-flow="record-ocr">② 拍疫苗本 · 识别 → 确认 → 自动算到期日</button></li>
+        <li><button data-flow="reminder">③ 到期提醒 · 标记完成自动滚动下一周期</button></li>
+        <li><button data-flow="present">④ 出示模式 · 全屏只读健康记录</button></li>
+        <li><button data-flow="paywall">⑤ 添加第 2 只宠物 · 触发 ¥48 买断墙</button></li>
+      </ol>
+    </div>
+
+    <div class="console-section">
+      <h2>演示控制台</h2>
+      <div class="demo-row">
+        <span class="demo-label">模拟今天</span>
+        <strong id="demoDate">—</strong>
+      </div>
+      <div class="demo-buttons">
+        <button class="chip" data-days="-7">−7 天</button>
+        <button class="chip" data-days="7">+7 天</button>
+        <button class="chip" data-days="30">+30 天</button>
+        <button class="chip ghost" data-days="reset">回到今天</button>
+      </div>
+      <p class="demo-hint">快进时间可观察「临期 → 逾期」状态与本地提醒（原型内模拟）。</p>
+      <div class="demo-buttons stacked">
+        <button class="action-btn" id="loadSample">载入示例档案（布丁）</button>
+        <button class="action-btn ghost" id="resetAll">清空全部数据</button>
+      </div>
+    </div>
+
+    <div class="console-section note">
+      <h2>说明</h2>
+      <ul>
+        <li>拍照识别为<strong>模拟端侧 OCR</strong>：可上传任意图片走扫描动画，或直接用示例疫苗本。</li>
+        <li>数据保存在浏览器 localStorage，模拟「本地优先 + iCloud」。</li>
+        <li>买断为模拟内购，不产生真实扣费。</li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- iPhone 设备框 -->
+  <div class="device-wrap">
+    <div class="device">
+      <div class="island"></div>
+      <div class="statusbar">
+        <span class="sb-time">9:41</span>
+        <span class="sb-icons">
+          <svg viewBox="0 0 18 12" width="18" height="12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="5" y="4.5" width="3" height="7.5" rx="1"/><rect x="10" y="2" width="3" height="10" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+          <svg viewBox="0 0 16 12" width="16" height="12" fill="currentColor"><path d="M8 2.5c2.1 0 4 .8 5.5 2.2l1.2-1.3C12.8 1.5 10.5.7 8 .7S3.2 1.5 1.3 3.4l1.2 1.3C4 3.3 5.9 2.5 8 2.5z"/><path d="M8 6c1.1 0 2.1.4 2.9 1.1l1.2-1.3C11 4.7 9.5 4.1 8 4.1S5 4.7 3.9 5.8l1.2 1.3C5.9 6.4 6.9 6 8 6z"/><circle cx="8" cy="9.6" r="1.6"/></svg>
+          <svg viewBox="0 0 26 13" width="26" height="13"><rect x="0.5" y="0.5" width="22" height="12" rx="3.5" fill="none" stroke="currentColor" stroke-opacity=".4"/><rect x="2" y="2" width="17" height="9" rx="2" fill="currentColor"/><rect x="23.5" y="4" width="2" height="5" rx="1" fill="currentColor" fill-opacity=".4"/></svg>
+        </span>
+      </div>
+
+      <div class="screen" id="screen"><!-- JS 渲染 --></div>
+
+      <div class="home-indicator"></div>
+
+      <!-- 模拟 iOS 横幅通知 -->
+      <div class="push-banner" id="pushBanner" hidden>
+        <div class="push-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.6 20.6 3.4 13.4a4.9 4.9 0 0 1 7-7l7.2 7.2a4.9 4.9 0 0 1-7 7z"/><path d="m8.6 8.6 6.8 6.8"/></svg></div>
+        <div class="push-body">
+          <div class="push-head"><span>宠物健康本</span><span class="push-time">现在</span></div>
+          <p id="pushText"></p>
+        </div>
+      </div>
+
+      <!-- 底部弹层容器 -->
+      <div class="sheet-mask" id="sheetMask" hidden></div>
+      <div class="sheet" id="sheet" role="dialog" aria-modal="true" hidden></div>
+
+      <!-- Toast -->
+      <div class="toast" id="toast" hidden></div>
+    </div>
+    <p class="device-caption">390 × 844 · iPhone 14 规格 · 数据仅存本机</p>
+  </div>
+
+</div>
+
+<script>
+/* =========================================================
+   宠物健康本 · 高保真原型
+   纯前端模拟：数据 localStorage / OCR 模拟 / 内购模拟
+   ========================================================= */
+'use strict';
+
+const STORE_KEY = 'phb_proto_v1';
+const $screen = document.getElementById('screen');
+const $device = document.querySelector('.device');
+
+/* ---------- SVG 图标系统（替代 emoji，保证跨平台一致渲染） ---------- */
+const ICON_PATHS={
+  paw:'<path d="M12 13.4c2.6 0 5.4 1.9 5.4 4.3 0 1.5-1.1 2.6-2.7 2.6-1 0-1.8-.4-2.7-.4s-1.7.4-2.7.4c-1.6 0-2.7-1.1-2.7-2.6 0-2.4 2.8-4.3 5.4-4.3z"/><circle cx="5.3" cy="10.4" r="1.8"/><circle cx="9.2" cy="6.6" r="1.9"/><circle cx="14.8" cy="6.6" r="1.9"/><circle cx="18.7" cy="10.4" r="1.8"/>',
+  cat:'<path d="M4.8 5.2C4.5 7.8 4.6 10.4 5.4 12.2c1 2.4 3.3 4 6.6 4s6-1.6 7-4c.8-1.8.9-4.4.6-7L14.9 8c-1.9-1-4-1-5.8 0z"/><circle cx="9.3" cy="12" r=".9" fill="currentColor" stroke="none"/><circle cx="14.7" cy="12" r=".9" fill="currentColor" stroke="none"/><path d="M10.9 14.3c.35.4.75.6 1.1.6s.75-.2 1.1-.6"/>',
+  dog:'<path d="M7 4.8C4.6 6 3.6 9 4 12.4c.4 3 2.8 5.4 5.4 6.2 1.4.4 3.8.4 5.2 0 2.6-.8 5-3.2 5.4-6.2.4-3.4-.6-6.4-3-7.6-1.6-.8-2.6.4-5 .4s-3.4-1.2-5-.4z"/><circle cx="9.3" cy="11.4" r=".9" fill="currentColor" stroke="none"/><circle cx="14.7" cy="11.4" r=".9" fill="currentColor" stroke="none"/><path d="M12 13.8v1.2M10.4 15.8c.5.6 1.1.9 1.6.9s1.1-.3 1.6-.9"/>',
+  vaccine:'<path d="m18 2 4 4"/><path d="m17 7 3-3"/><path d="M19 9 8.7 19.3c-1 1-2.5 1-3.4 0l-.6-.6c-1-1-1-2.5 0-3.4L15 5"/><path d="m9 11 4 4"/><path d="m5 19-3 3"/><path d="m14 4 6 6"/>',
+  bug:'<path d="M9 5a3 3 0 0 1 6 0"/><path d="M8 8h8v5a4 4 0 0 1-8 0z"/><path d="M8 9H4.5M8 13H4.5M19.5 9H16M19.5 13H16M8.5 17.5 6 20M15.5 17.5 18 20M12 8v9"/>',
+  shield:'<path d="M12 3l7 2.8v5.1c0 4.4-2.9 8.3-7 9.6-4.1-1.3-7-5.2-7-9.6V5.8z"/><path d="m9 11.8 2.2 2.2 4-4.4"/>',
+  medical:'<path d="M9.5 4h5v5.5H20v5h-5.5V20h-5v-5.5H4v-5h5.5z"/>',
+  weight:'<path d="M7 8.5h10l-1.1 12H8.1z"/><circle cx="12" cy="5.5" r="2.1"/>',
+  camera:'<rect x="3" y="7.2" width="18" height="12.8" rx="2.6"/><circle cx="12" cy="13.4" r="3.3"/><path d="M8.6 7.2 10 4.8h4l1.4 2.4"/>',
+  bell:'<path d="M18 9.5a6 6 0 1 0-12 0c0 5.5-2.3 6.8-2.3 6.8h16.6S18 15 18 9.5"/><path d="M10.2 19.8a2 2 0 0 0 3.6 0"/>',
+  lock:'<rect x="5" y="11" width="14" height="9.4" rx="2.4"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  sparkle:'<path d="M11 4.5 12.6 9l4.5 1.6-4.5 1.6L11 16.6l-1.6-4.4L5.5 10.6 10 9z"/><path d="M18.2 14.8l.8 2.1 2.1.8-2.1.8-.8 2.1-.8-2.1-2.1-.8 2.1-.8z"/>',
+  book:'<path d="M5 5a1.6 1.6 0 0 1 1.6-1.6H19v14.2H6.6A1.6 1.6 0 0 0 5 19.2z"/><path d="M5 19.2A1.6 1.6 0 0 0 6.6 20.8H19v-3.2"/><path d="M9 7.6h6"/>',
+  warn:'<path d="M12 4.2 2.8 19.6h18.4z"/><path d="M12 10v4.2M12 17.4v.2"/>',
+  checkCircle:'<circle cx="12" cy="12" r="8.4"/><path d="m8.4 12.4 2.4 2.4 4.8-5"/>',
+  gem:'<path d="M7.2 4.5h9.6l3.4 4.3L12 19.8 3.8 8.8z"/><path d="M3.8 8.8h16.4M9.6 8.8 12 19.8l2.4-11"/>',
+  family:'<circle cx="8.6" cy="8" r="2.6"/><path d="M4.2 19.2c.3-3.1 2.1-4.7 4.4-4.7s4.1 1.6 4.4 4.7"/><circle cx="16.4" cy="9.2" r="2.2"/><path d="M15.2 14.6c2.5.2 4 1.8 4.2 4.3"/>',
+  clock:'<circle cx="12" cy="13" r="7.4"/><path d="M12 9.6V13l2.4 1.6M5 3.6 3.6 5.6M19 3.6l1.4 2"/>',
+  folder:'<path d="M3.5 6.6A1.6 1.6 0 0 1 5.1 5h3.8l2 2.6h7.6a1.6 1.6 0 0 1 1.6 1.6v8.2a1.6 1.6 0 0 1-1.6 1.6H5.1a1.6 1.6 0 0 1-1.6-1.6z"/>',
+  export:'<path d="M12 13.8V3.4M8.2 6.4 12 2.9l3.8 3.5M5 12.4v6a1.6 1.6 0 0 0 1.6 1.6h10.8a1.6 1.6 0 0 0 1.6-1.6v-6"/>',
+  heartPulse:'<path d="M12 20.2s-6.8-4.2-6.8-9C5.2 8.3 6.9 6.8 8.8 6.8c1.3 0 2.5.7 3.2 1.8.7-1.1 1.9-1.8 3.2-1.8 1.9 0 3.6 1.5 3.6 4.4 0 4.8-6.8 9-6.8 9z"/><path d="M6 12.2h2.4l1-2 1.6 3.4 1-2.2H18"/>',
+  clipboard:'<rect x="6" y="4.6" width="12" height="15.8" rx="2"/><path d="M9.2 4.6v-.8a.8.8 0 0 1 .8-.8h4a.8.8 0 0 1 .8.8v.8M9.2 10h5.6M9.2 13.8h5.6"/>',
+  info:'<circle cx="12" cy="12" r="8.4"/><path d="M12 11.2v4.6M12 7.8v.2"/>',
+  calendar:'<rect x="3.5" y="5" width="17" height="15.5" rx="2.4"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+  pill:'<path d="M10.6 20.6 3.4 13.4a4.9 4.9 0 0 1 7-7l7.2 7.2a4.9 4.9 0 0 1-7 7z"/><path d="m8.6 8.6 6.8 6.8"/>',
+};
+function icon(name,size,sw){ return `<svg class="ic" width="${size||20}" height="${size||20}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw||1.8}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON_PATHS[name]||''}</svg>`; }
+
+/* ---------- 中文化日期字段（readonly 显示 + 原生选择器） ---------- */
+function fmtDateCN(s){ const d=parseD(s); return d.getFullYear()+' 年 '+(d.getMonth()+1)+' 月 '+d.getDate()+' 日'; }
+function dateField(id,val,max,min){
+  return `<div class="date-field"><button type="button" class="date-display" id="${id}-disp"><span id="${id}-text"${val?'':' class="ph"'}>${val?fmtDateCN(val):'选择日期'}</span>${icon('calendar',16)}</button><input type="date" id="${id}" class="vh" value="${val||''}"${max?` max="${max}"`:''}${min?` min="${min}"`:''} tabindex="-1" aria-hidden="true"></div>`;
+}
+function bindDateField(id,onChange){
+  const inp=document.getElementById(id), disp=document.getElementById(id+'-disp'), txt=document.getElementById(id+'-text');
+  if(!inp||!disp) return;
+  disp.onclick=()=>{ try{ inp.showPicker(); }catch(e){ inp.classList.remove('vh'); inp.focus(); } };
+  inp.onchange=()=>{ if(inp.value){ txt.textContent=fmtDateCN(inp.value); txt.classList.remove('ph'); } if(onChange) onChange(inp.value); };
+}
+
+/* ---------- 领域常量：周期表（默认建议值，遵兽医医嘱） ---------- */
+const KIND_META = {
+  vaccine:    { label: '疫苗',     icon: 'vaccine', dot: 'vaccine', defaultCycle: 12 },
+  deworm_in:  { label: '体内驱虫', icon: 'bug',     dot: 'deworm',  defaultCycle: 3  },
+  deworm_out: { label: '体外驱虫', icon: 'shield',  dot: 'deworm',  defaultCycle: 1  },
+  visit:      { label: '就诊',     icon: 'medical', dot: 'visit',   defaultCycle: 0  },
+  weight:     { label: '体重',     icon: 'weight',  dot: 'weight',  defaultCycle: 0  },
+};
+const NAME_PRESETS = {
+  vaccine:    ['猫三联', '狂犬疫苗', '犬四联', '犬六联'],
+  deworm_in:  ['体内驱虫药'],
+  deworm_out: ['体外驱虫滴剂', '驱虫项圈'],
+};
+const SPECIES_META = {
+  cat:   { label: '猫咪', cls: 'cat',   icon: 'cat' },
+  dog:   { label: '狗狗', cls: 'dog',   icon: 'dog' },
+  other: { label: '其他', cls: 'other', icon: 'paw' },
+};
+
+/* ---------- 状态 ---------- */
+let S = load();
+let view = { tab: 'home', page: null, activePetId: null };
+let pendingAction = null; // 付费解锁后继续的动作
+
+function defaultState(){
+  return {
+    onboarded:false, purchased:false, offsetDays:0,
+    pets:[], records:[],
+    settings:{ notify:true, leadDays:[7,1] },
+    fired:{},
+  };
+}
+function load(){
+  try{ const raw = localStorage.getItem(STORE_KEY); if(raw) return Object.assign(defaultState(), JSON.parse(raw)); }catch(e){}
+  return defaultState();
+}
+function save(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify(S)); }catch(e){ toast('存储空间已满：请先删除带照片的记录'); } }
+function uid(){ return Math.random().toString(36).slice(2,9); }
+
+/* ---------- 日期工具 ---------- */
+function today(){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+S.offsetDays); return d; }
+function parseD(s){ const d=new Date(s+'T00:00:00'); return d; }
+function fmt(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function fmtCN(s){ const d=parseD(s); return (d.getMonth()+1)+'月'+d.getDate()+'日'; }
+/* 月末安全：1/31 + 1 月 → 2 月最后一天，而不是 3/3 */
+function addMonths(s,m){ const d=parseD(s); const day=d.getDate(); d.setMonth(d.getMonth()+m); if(d.getDate()!==day){ d.setDate(0); } return fmt(d); }
+function diffDays(aStr,b){ const a=parseD(aStr); return Math.round((a-b)/86400000); } // a - today
+function ageText(birthday){
+  if(!birthday) return '';
+  const months=(today().getFullYear()-parseD(birthday).getFullYear())*12 + today().getMonth()-parseD(birthday).getMonth();
+  if(months<1) return '不到 1 个月';
+  if(months<12) return months+' 个月';
+  const y=Math.floor(months/12), m=months%12;
+  return m? y+' 岁 '+m+' 个月' : y+' 岁';
+}
+function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- 派生：提醒状态 ---------- */
+function activePet(){ return S.pets.find(p=>p.id===view.activePetId) || S.pets[0]; }
+function remindersFor(petId){
+  const lead = Math.max(...S.settings.leadDays, 0);
+  return S.records
+    .filter(r=>r.petId===petId && r.nextDue && !r.done)
+    .map(r=>{
+      const d = diffDays(r.nextDue, today());
+      let bucket='ok', text='';
+      if(d<0){ bucket='due'; text='已逾期 '+(-d)+' 天'; }
+      else if(d===0){ bucket='due'; text='今天到期'; }
+      else if(d<=lead){ bucket='warn'; text='还有 '+d+' 天到期'; }
+      else text='还有 '+d+' 天';
+      return {...r, diff:d, bucket, statusText:text};
+    })
+    .sort((a,b)=>a.nextDue.localeCompare(b.nextDue));
+}
+function mostUrgent(petId){
+  return remindersFor(petId).find(r=>r.bucket==='due') || remindersFor(petId).find(r=>r.bucket==='warn') || null;
+}
+/* 给任意记录补充提醒状态，供时间线/最近记录渲染徽标 */
+function withStatus(r){
+  if(r.done) return {...r, bucket:'done', statusText:''};
+  if(!r.nextDue) return {...r, bucket:'ok', statusText:''};
+  const d=diffDays(r.nextDue, today());
+  const lead=Math.max(...S.settings.leadDays,0);
+  if(d<0) return {...r,bucket:'due',statusText:'已逾期 '+(-d)+' 天'};
+  if(d===0) return {...r,bucket:'due',statusText:'今天到期'};
+  if(d<=lead) return {...r,bucket:'warn',statusText:'还有 '+d+' 天到期'};
+  return {...r,bucket:'ok',statusText:'还有 '+d+' 天'};
+}
+
+/* ---------- 模拟推送：同一记录进入新状态桶时弹一次 ---------- */
+function fireReminders(){
+  if(!S.settings.notify) return;
+  const all = S.pets.flatMap(p=>remindersFor(p.id)).filter(r=>r.bucket!=='ok');
+  for(const r of all){
+    const key = r.id+':'+r.bucket;
+    if(!S.fired[key]){
+      S.fired[key]=true; save();
+      const pet = S.pets.find(p=>p.id===r.petId);
+      showPush((pet?pet.name+' · ':'')+r.name+'，'+r.statusText);
+      break; // 每次渲染最多一条
+    }
+  }
+}
+let pushTimer=null;
+function showPush(text){
+  const b=document.getElementById('pushBanner');
+  document.getElementById('pushText').textContent=text;
+  b.hidden=false;
+  clearTimeout(pushTimer);
+  pushTimer=setTimeout(()=>{ b.hidden=true; },4500);
+}
+function toast(text){
+  const t=document.getElementById('toast'); t.textContent=text; t.hidden=false;
+  clearTimeout(t._h); t._h=setTimeout(()=>t.hidden=true,1800);
+}
+
+/* ---------- Chrome：Tab 栏 ---------- */
+function renderChrome(){
+  let bar=document.getElementById('tabbar');
+  const inSubPage = !!view.page; // 引导/拍照/表单等内页隐藏 Tab
+  if(inSubPage){ if(bar) bar.remove(); return; }
+  if(!S.onboarded){ if(bar) bar.remove(); return; }
+  if(!bar){
+    bar=document.createElement('nav'); bar.id='tabbar'; bar.className='tabbar';
+    $device.appendChild(bar);
+  }
+  const tab=(id,icon,label)=>`<button class="tab ${view.tab===id?'active':''}" data-act="tab" data-tab="${id}">${icon}<span>${label}</span></button>`;
+  bar.innerHTML =
+    tab('home',
+      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9"/></svg>`,'首页')+
+    tab('health',
+      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7a2 2 0 0 1 2-2h5l2 2h5a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M8 13h3m0 0h2m-2-2v4"/></svg>`,'健康')+
+    `<button class="tab" data-act="add-menu" aria-label="记一笔"><span class="tab-fab"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span></button>`+
+    tab('present',
+      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>`,'出示')+
+    tab('me',
+      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" radius="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6"/></svg>`,'我的');
+}
+
+/* ---------- 总渲染 ---------- */
+function render(){
+  renderChrome();
+  closeSheet(false);
+  $screen.style.background='';
+  if(!S.onboarded && view.page!=='petForm'){ $screen.innerHTML = viewOnboarding(); bindOnboarding(); updateConsole(); return; }
+  if(!activePet()){ view.activePetId=null; }
+  if(view.page==='camera'){ $screen.style.background='#211D1A'; $screen.innerHTML=viewCamera(); bindCamera(); updateConsole(); return; }
+  if(view.page==='ocrConfirm'){ $screen.innerHTML=viewOcrConfirm(); bindOcrConfirm(); updateConsole(); return; }
+  if(view.page==='recordForm'){ $screen.innerHTML=viewRecordForm(); bindRecordForm(); updateConsole(); return; }
+  if(view.page==='visitForm'){ $screen.innerHTML=viewVisitForm(); bindVisitForm(); updateConsole(); return; }
+  if(view.page==='weightForm'){ $screen.innerHTML=viewWeightForm(); bindWeightForm(); updateConsole(); return; }
+  if(view.page==='petForm'){ $screen.innerHTML=viewPetForm(); bindPetForm(); updateConsole(); return; }
+
+  if(view.tab==='health') $screen.innerHTML=viewHealth();
+  else if(view.tab==='present'){ $screen.innerHTML=''; openPresent(); updateConsole(); return; }
+  else if(view.tab==='me') $screen.innerHTML=viewMe();
+  else $screen.innerHTML=viewHome();
+  bindCommon();
+  updateConsole();
+  fireReminders();
+}
+
+/* ================= 引导 ================= */
+function viewOnboarding(){
+  return `<div class="onboard">
+    <div class="hero">
+      <div class="hero-emoji">${icon('paw',76)}</div>
+      <h1>每一针、每一次驱虫<br>都不用再靠脑子记</h1>
+      <p class="lead">打完针拍一下疫苗本，下次什么时候该做，<br>宠物健康本替你算好、到点提醒你。</p>
+      <div class="pillars">
+        <div class="pillar"><div class="e">${icon('camera',24)}</div><b>拍完就记好</b><span>识别疫苗本，自动建档</span></div>
+        <div class="pillar"><div class="e">${icon('bell',24)}</div><b>到期主动喊</b><span>疫苗驱虫一个不漏</span></div>
+        <div class="pillar"><div class="e">${icon('lock',24)}</div><b>记录归自己</b><span>换医院也不断档</span></div>
+      </div>
+    </div>
+    <div class="foot">
+      <button class="btn" data-act="start-pet">为我的宠物建档</button>
+      <p class="fine">数据仅保存在本机与你的 iCloud · 无账号 · 无广告<br>所有提醒周期为建议值，请遵兽医医嘱</p>
+    </div>
+  </div>`;
+}
+function bindOnboarding(){
+  $screen.querySelector('[data-act="start-pet"]').onclick=()=>{ view.page='petForm'; petFormMode='create'; render(); };
+}
+
+/* ================= 宠物表单 ================= */
+let petFormMode='create', petFormEditingId=null;
+let petDraft={};
+function viewPetForm(){
+  const d=petDraft;
+  const editing = petFormMode==='edit';
+  const title = editing?'编辑宠物档案':'它叫什么名字？';
+  return `<div class="navi">
+      <button data-act="back" aria-label="返回">‹</button>
+      <span class="nv-title">${editing?'宠物资料':'建立档案'}</span>
+      <span style="width:38px"></span>
+    </div>
+    <div class="page navi-page">
+      <h2 class="large-title" style="margin-bottom:4px">${title}</h2>
+      <p class="muted" style="font-size:13.5px;margin-bottom:20px">除了名字，其他都可以稍后再补。</p>
+      <div class="field">
+        <label>名字 *</label>
+        <input type="text" id="pf-name" placeholder="例如：布丁" value="${esc(d.name||'')}" maxlength="12">
+      </div>
+      <div class="field">
+        <label>种类</label>
+        <div class="seg" id="pf-species">
+          ${['cat','dog','other'].map(k=>`<button data-v="${k}" class="${(d.species||'cat')===k?'active':''}">${icon(SPECIES_META[k].icon,15)} ${SPECIES_META[k].label}</button>`).join('')}
+        </div>
+      </div>
+      <div class="field"><label>品种</label><input type="text" id="pf-breed" placeholder="例如：英国短毛猫（可不填）" value="${esc(d.breed||'')}"></div>
+      <div class="field"><label>生日</label>${dateField('pf-birthday',d.birthday||'',fmt(today()))}</div>
+      <div class="field">
+        <label>性别</label>
+        <div class="seg" id="pf-gender">
+          ${[['','保密'],['female','妹妹'],['male','弟弟']].map(([v,l])=>`<button data-v="${v}" class="${(d.gender||'')===v?'active':''}">${l}</button>`).join('')}
+        </div>
+      </div>
+      <div class="field"><label>当前体重（kg）</label><input type="number" id="pf-weight" step="0.1" min="0" placeholder="可不填" value="${esc(d.weight??'')}"></div>
+      <div style="height:8px"></div>
+      <button class="btn" id="pf-save">${editing?'保存修改':'建立档案'}</button>
+    </div>`;
+}
+function bindPetForm(){
+  const d=petDraft; d.species=d.species||'cat';
+  bindDateField('pf-birthday');
+  const collect=()=>{ d.name=$screen.querySelector('#pf-name').value; d.breed=$screen.querySelector('#pf-breed').value; d.birthday=$screen.querySelector('#pf-birthday').value; d.weight=$screen.querySelector('#pf-weight').value; };
+  $screen.querySelector('#pf-species').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; collect(); d.species=b.dataset.v; render(); };
+  $screen.querySelector('#pf-gender').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; collect(); d.gender=b.dataset.v; render(); };
+  $screen.querySelector('#pf-save').onclick=()=>{
+    d.name=$screen.querySelector('#pf-name').value.trim();
+    d.breed=$screen.querySelector('#pf-breed').value.trim();
+    d.birthday=$screen.querySelector('#pf-birthday').value;
+    d.weight=parseFloat($screen.querySelector('#pf-weight').value)||null;
+    if(!d.name){ toast('先给它起个名字吧'); return; }
+    if(petFormMode==='create'){
+      const pet={id:uid(),name:d.name,species:d.species,breed:d.breed,birthday:d.birthday,gender:d.gender,weight:d.weight};
+      S.pets.push(pet); view.activePetId=pet.id; S.onboarded=true;
+      toast('档案已建立');
+    }else{
+      const pet=S.pets.find(p=>p.id===petFormEditingId);
+      Object.assign(pet,{name:d.name,species:d.species,breed:d.breed,birthday:d.birthday,gender:d.gender,weight:d.weight});
+    }
+    petDraft={}; save();
+    view.page=null; view.tab='home'; render();
+  };
+}
+
+/* ================= 首页 ================= */
+function petChips(){
+  const cur=activePet();
+  return `<div class="pet-chips">
+    ${S.pets.map(p=>`<button class="pet-chip ${cur&&cur.id===p.id?'active':''}" data-pet="${p.id}">
+      <span class="avatar ${SPECIES_META[p.species].cls}">${icon(SPECIES_META[p.species].icon,14)}</span>${esc(p.name)}</button>`).join('')}
+    <button class="pet-chip add" data-act="add-pet"><span style="font-size:15px">＋</span>添加</button>
+  </div>`;
+}
+function urgentCard(pet){
+  const r=mostUrgent(pet.id);
+  if(!r){
+    const next=remindersFor(pet.id)[0];
+    return `<div class="urgent ok">
+      <span class="u-emoji">${icon('checkCircle',56,1.6)}</span>
+      <h3>近期没有待办，一切安好</h3>
+      <p>${next? esc(next.name)+' · '+next.statusText : '记下第一针疫苗，让健康本开始守护它'}</p>
+      <div class="u-actions"><button class="primary" data-act="add-menu">记一笔</button></div>
+    </div>`;
+  }
+  const cls=r.bucket==='due'?'due':'warn';
+  const ic=KIND_META[r.kind].icon;
+  return `<div class="urgent ${cls}">
+    <span class="u-emoji">${icon(ic,56,1.6)}</span>
+    <h3>${esc(r.name)} · ${r.statusText}</h3>
+    <p>${r.bucket==='due'?'别忘记预约，完成后点一下，我自动排下一次':`建议提前预约 ${pet.name} 的${KIND_META[r.kind].label}`}</p>
+    <div class="u-actions">
+      <button class="primary" data-act="complete" data-id="${r.id}">已完成</button>
+      <button data-act="reschedule" data-id="${r.id}">改期</button>
+    </div>
+  </div>`;
+}
+function tlItem(r){
+  const meta=KIND_META[r.kind];
+  const badge = r.bucket==='due'?`<span class="badge due">${r.statusText}</span>`:r.bucket==='warn'?`<span class="badge warn">${r.statusText}</span>`:'';
+  const sub = r.kind==='weight'
+    ? `${r.weightVal} kg`
+    : r.kind==='visit'
+      ? esc(r.reason||'就诊记录')
+      : `${meta.label}${r.place?' · '+esc(r.place):''}`;
+  const next = (!r.done && r.nextDue)?`<div style="margin-top:5px">${badge} <span class="tiny num">下次 ${r.nextDue}</span></div>`
+    : (r.done?`<span class="badge ok">已完成${r.cycleMonths?' · 已排入下一周期':''}</span>`:'');
+  return `<div class="tl-item">
+    <span class="tl-dot ${meta.dot}"></span>
+    <div class="tl-card">
+      <div class="row between">
+        <div style="min-width:0">
+          <div class="tl-name">${icon(meta.icon,15)} ${esc(r.name||meta.label)}</div>
+          <div class="tl-meta num">${r.date} · ${sub}${r.diagnosis?'<br>'+esc(r.diagnosis):''}</div>
+          ${next}
+        </div>
+        ${r.photo?`<img class="tl-thumb" src="${r.photo}" alt="疫苗本照片">`:''}
+      </div>
+      <button class="tl-del" data-act="del-record" data-id="${r.id}" aria-label="删除本条记录">✕</button>
+    </div>
+  </div>`;
+}
+function viewHome(){
+  const pet=activePet();
+  const rem=remindersFor(pet.id);
+  const upcoming=rem.slice(0,3);
+  const next0=rem[0];
+  const heroSub = next0
+    ? `距「${esc(next0.name)}」${next0.diff<0?'已逾期 '+(-next0.diff)+' 天':(next0.diff===0?'今天到期':'还有 '+next0.diff+' 天')}`
+    : fmt(today())+' · 愿毛孩子们今天也健康';
+  /* 最近记录只保留就诊/体重/已完成，避免与「即将到来」重复 */
+  const history=S.records.filter(r=>r.petId===pet.id && (r.done || r.kind==='visit' || r.kind==='weight'))
+    .sort((a,b)=>b.date.localeCompare(a.date)).slice(0,4).map(withStatus);
+  return `<div class="page">
+    <h2 class="large-title">${esc(pet.name)}<span class="sub">${heroSub}</span></h2>
+    <div style="height:16px"></div>
+    ${petChips()}
+    ${!S.settings.notify?`<div class="notify-denied">${icon('warn',14)} 通知权限未开启：到期时我只能在这里提醒你，<u data-act="enable-notify">点我去开启</u></div>`:'<div style="height:4px"></div>'}
+    <div class="pet-card row">
+      <span class="avatar md ${SPECIES_META[pet.species].cls}">${icon(SPECIES_META[pet.species].icon,22)}</span>
+      <div style="flex:1;min-width:0">
+        <div class="pc-name">${esc(pet.name)}</div>
+        <div class="tiny" style="margin-top:1px">${SPECIES_META[pet.species].label}${pet.breed?' · '+esc(pet.breed):''}${pet.birthday?' · '+ageText(pet.birthday):''}${pet.weight?(' · '+pet.weight+'kg'):''}</div>
+      </div>
+      <button class="icon-btn" data-act="edit-pet" data-id="${pet.id}" aria-label="资料">${icon('info',16)}</button>
+    </div>
+    <div style="height:14px"></div>
+    ${urgentCard(pet)}
+    ${upcoming.length?`<div class="section-title">即将到来</div>
+      <div class="card" style="padding:6px 16px">
+        ${upcoming.map((r,i)=>`<div class="row between" style="padding:11px 0;align-items:center;${i<upcoming.length-1?'border-bottom:1px solid var(--hairline)':''}">
+          <span style="display:inline-flex;align-items:center;gap:7px;color:var(--ink-2)">${icon(KIND_META[r.kind].icon,15)} <b style="font-size:14.5px;color:var(--ink)">${esc(r.name)}</b></span>
+          <span class="badge ${r.bucket==='due'?'due':r.bucket==='warn'?'warn':'ok'} num">${r.statusText}</span>
+        </div>`).join('')}
+      </div>`:''}
+    <div class="section-title">最近记录</div>
+    ${history.length?`<div class="tl">${history.map(tlItem).join('')}</div>`
+      : `<div class="card empty"><div class="paw">${icon('paw',46)}</div><h3>还没有健康记录</h3><p>拍一下疫苗本，10 秒建立第一条记录</p><button class="btn secondary small" data-act="add-menu" style="margin:0 auto">${icon('camera',15)} 记第一笔</button></div>`}
+  </div>`;
+}
+
+/* ================= 健康页（完整时间线） ================= */
+function viewHealth(){
+  const pet=activePet();
+  const all=S.records.filter(r=>r.petId===pet.id).sort((a,b)=>b.date.localeCompare(a.date)).map(withStatus);
+  return `<div class="page">
+    <h2 class="large-title">健康档案<span class="sub">${esc(pet.name)} · 共 ${all.length} 条记录</span></h2>
+    <div style="height:16px"></div>
+    ${petChips()}
+    <div style="height:8px"></div>
+    ${all.length?`<div class="tl">${all.map(tlItem).join('')}</div>`
+      :`<div class="card empty"><div class="paw">${icon('clipboard',46)}</div><h3>档案还是空的</h3><p>疫苗、驱虫、就诊、体重都会沉淀在这里</p><button class="btn small" data-act="add-menu" style="margin:0 auto">记一笔</button></div>`}
+  </div>`;
+}
+
+/* ================= 我的 / 设置 ================= */
+function viewMe(){
+  const leadChips=[7,3,1,0];
+  return `<div class="page">
+    <h2 class="large-title">我的<span class="sub">数据归你所有 · 无需注册账号</span></h2>
+    <div style="height:16px"></div>
+    <div class="card row" style="gap:14px;align-items:center">
+      <span class="avatar lg other">${icon('paw',28)}</span>
+      <div style="flex:1">
+        <div style="font-size:16px;font-weight:800">本地档案</div>
+        <div class="tiny" style="margin-top:3px">${S.pets.length} 只宠物 · ${S.records.length} 条记录 · 数据仅存本机（iCloud 同步规划中）</div>
+      </div>
+    </div>
+
+    <div class="section-title">桌面小组件 <span style="text-transform:none;letter-spacing:0">· P1</span></div>
+    <div class="card widget-mock">
+      <div class="widget-card">
+        <span class="w-top">宠物健康本</span>
+        <span class="w-pet">${esc(activePet()?activePet().name:'布丁')}</span>
+        <span class="w-big num">${(()=>{const r=activePet()&&remindersFor(activePet().id)[0];return r?Math.max(r.diff,0)+' 天':'—';})()}</span>
+        <span class="w-name">${esc((activePet()&&remindersFor(activePet().id)[0]?.name)||'近期无待办')}</span>
+        ${!S.purchased?`<div class="widget-lock">${icon('lock',13)} 买断解锁</div>`:''}
+      </div>
+      <div class="widget-card sm">${icon(SPECIES_META[activePet()?activePet().species:'cat'].icon,24)}<div class="tiny" style="margin-top:2px">${activePet()?esc(activePet().name):''}</div>${!S.purchased?`<div class="widget-lock">${icon('lock',13)}</div>`:''}</div>
+    </div>
+    ${!S.purchased?`<button class="btn" style="margin-top:12px" data-act="paywall">解锁小组件 · ¥48 一次买断</button>`:''}
+
+    <div class="section-title">购买</div>
+    <div class="set-group">
+      <div class="set-item"><span class="si-icon"${S.purchased?' style="color:var(--green);background:var(--green-soft)"':''}>${icon(S.purchased?'checkCircle':'gem',15)}</span>${S.purchased?'已买断 · 全部功能可用':'宠物健康本 完整版'}
+        ${S.purchased?'<span class="si-val">感谢支持</span>':'<span class="si-val" style="color:var(--accent);font-weight:700" data-act="paywall">¥48 ›</span>'}</div>
+      <div class="set-item"><span class="si-icon">${icon('family',15)}</span>家人共享<span class="si-val">规划中</span></div>
+    </div>
+
+    <div class="section-title">提醒</div>
+    <div class="set-group">
+      <div class="set-item"><span class="si-icon">${icon('bell',15)}</span>本地通知
+        <span class="toggle ${S.settings.notify?'on':''}" data-act="toggle-notify" role="switch" aria-checked="${S.settings.notify}"></span></div>
+      <div class="set-item" style="flex-wrap:wrap"><span class="si-icon">${icon('clock',15)}</span>提前提醒
+        <span class="choice-row" style="margin-left:auto;width:100%;justify-content:flex-end;margin-top:8px">
+          ${leadChips.map(d=>`<button class="choice ${S.settings.leadDays.includes(d)?'active':''}" data-act="toggle-lead" data-d="${d}">${d===0?'当天':'前 '+d+' 天'}</button>`).join('')}
+        </span></div>
+    </div>
+
+    <div class="section-title">数据与隐私</div>
+    <div class="set-group">
+      <div class="set-item"><span class="si-icon">${icon('folder',15)}</span>存储位置<span class="si-val">本机 + iCloud</span></div>
+      <div class="set-item"><span class="si-icon">${icon('export',15)}</span>导出长图 / PDF<span class="si-val">规划中（买断包含）</span></div>
+      <div class="set-item"><span class="si-icon">${icon('heartPulse',15)}</span>医疗边界<span class="si-val">仅提醒记录</span></div>
+    </div>
+    <p class="tiny" style="text-align:center;line-height:1.7;margin:18px 20px">所有周期为建议默认值，请遵兽医医嘱。<br>本产品不提供诊断、用药或剂量建议。</p>
+  </div>`;
+}
+
+/* ================= 添加菜单 Sheet ================= */
+function openAddMenu(){
+  openSheet(`<h3>记一笔</h3>
+    <div class="action-list">
+      <button data-act="go-camera"><span class="al-icon v">${icon('camera',17)}</span><span>拍疫苗本识别<small>拍照自动填好类型与日期</small></span></button>
+      <button data-act="go-record"><span class="al-icon d">${icon('vaccine',17)}</span><span>疫苗 / 驱虫记录<small>手动填写，自动排下次</small></span></button>
+      <button data-act="go-visit"><span class="al-icon m">${icon('medical',17)}</span><span>就诊记录<small>诊断摘要、费用、票据</small></span></button>
+      <button data-act="go-weight"><span class="al-icon w">${icon('weight',17)}</span><span>体重记录<small>追踪成长曲线</small></span></button>
+    </div>
+    <div style="height:14px"></div>
+    <button class="btn ghost" data-act="sheet-close">取消</button>`);
+}
+
+/* ================= 拍照识别（模拟 OCR） ================= */
+function viewCamera(){
+  return `<div class="navi navi-dark"><button data-act="back" aria-label="返回" style="color:#fff">‹</button>
+      <span class="nv-title" style="color:#fff">拍摄疫苗本</span><span style="width:38px"></span></div>
+    <div class="cam" style="padding-top:24px">
+      <div class="cam-frame" id="camFrame">
+        <div class="cam-emoji">${icon('book',60,1.5)}</div>
+        <p>把疫苗本上最近一次<br>接种 / 驱虫记录对准框内</p>
+      </div>
+      <div class="cam-actions">
+        <input type="file" id="camFile" accept="image/*" hidden>
+        <button class="btn" id="camShoot">${icon('camera',17)} 拍照 / 上传图片</button>
+        <button class="btn secondary" id="camSample">用示例疫苗本试试</button>
+      </div>
+    </div>`;
+}
+/* 照片压缩：长边 ≤1280px、JPEG 0.7，避免 base64 撑爆 localStorage 配额 */
+function compressImage(src,cb){
+  const img=new Image();
+  img.onload=()=>{
+    const MAX=1280; let w=img.width, h=img.height;
+    if(Math.max(w,h)>MAX){ const r=MAX/Math.max(w,h); w=Math.round(w*r); h=Math.round(h*r); }
+    try{
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      cb(c.toDataURL('image/jpeg',0.7));
+    }catch(e){ cb(src); }
+  };
+  img.onerror=()=>cb(src);
+  img.src=src;
+}
+function bindCamera(){
+  const frame=$screen.querySelector('#camFrame');
+  const runOCR=(src)=>{
+    frame.classList.add('has-img');
+    frame.innerHTML=`<img src="${src}" alt="疫苗本"><div class="scan-line"></div><div class="scan-status" id="scanStatus">正在识别…</div>`;
+    const msgs=['正在识别文字…','提取接种项目与日期…','计算下次到期日…'];
+    let i=0; const t=setInterval(()=>{ const el=document.getElementById('scanStatus'); if(el&&msgs[++i]) el.textContent=msgs[i]; },550);
+    setTimeout(()=>{ clearInterval(t); ocrDraft=mockOCR(src); view.page='ocrConfirm'; render(); },1900);
+  };
+  $screen.querySelector('#camShoot').onclick=()=>document.getElementById('camFile').click();
+  $screen.querySelector('#camFile').onchange=e=>{
+    const f=e.target.files[0]; if(!f)return;
+    const rd=new FileReader(); rd.onload=()=>compressImage(rd.result, runOCR); rd.readAsDataURL(f);
+  };
+  $screen.querySelector('#camSample').onclick=()=>runOCR(sampleBookURI());
+}
+
+/* 示例疫苗本：内联 SVG，免外部资源；日期随演示台「今天」动态生成 */
+function sampleBookURI(){
+  const t=today();
+  const dOld=addMonths(fmt(t),-12), dOldNext=addMonths(dOld,12);   // 去年接种
+  const dOut=addMonths(fmt(t),-1), dOutNext=addMonths(dOut,1);      // 上月体外驱虫
+  const dNew=fmt(new Date(t.getTime()-7*86400000)), dNewNext=addMonths(dNew,12); // 7 天前猫三联
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="600" height="820" viewBox="0 0 600 820">
+    <rect width="600" height="820" rx="18" fill="#F3E9D8"/>
+    <rect x="36" y="40" width="528" height="120" rx="10" fill="#E8764B"/>
+    <text x="300" y="92" fill="#fff" font-size="34" font-weight="700" text-anchor="middle" font-family="sans-serif">动物免疫证</text>
+    <text x="300" y="130" fill="#FCE4D6" font-size="18" text-anchor="middle" font-family="sans-serif">VACCINATION CERTIFICATE</text>
+    <text x="60" y="220" font-size="22" fill="#6E655C" font-family="sans-serif">宠物姓名：布丁　　种类：猫</text>
+    <line x1="60" y1="250" x2="540" y2="250" stroke="#C9BCA5" stroke-width="2"/>
+    <text x="60" y="300" font-size="20" font-weight="700" fill="#2A2520" font-family="sans-serif">免疫记录</text>
+    ${[['疫苗项目','接种日期','下次日期'],['猫三联',dOld,dOldNext],['狂犬疫苗',dOld,dOldNext],['体外驱虫',dOut,dOutNext],['猫三联',dNew,dNewNext]]
+      .map((row,ri)=>{const y=340+ri*70;const head=ri===0;
+        return `<rect x="60" y="${y-34}" width="480" height="58" fill="${head?'#EADFC9':'#FBF6EC'}" stroke="#D8CBB2"/>
+        <text x="150" y="${y}" font-size="21" font-weight="${head?'700':'400'}" fill="${head?'#6E655C':'#2A2520'}" text-anchor="middle" font-family="sans-serif">${row[0]}</text>
+        <text x="340" y="${y}" font-size="21" font-weight="${head?'700':'400'}" fill="${head?'#6E655C':'#2A2520'}" text-anchor="middle" font-family="sans-serif">${row[1]}</text>
+        <text x="480" y="${y}" font-size="21" font-weight="${head?'700':'400'}" fill="${head?'#6E655C':'#2A2520'}" text-anchor="middle" font-family="sans-serif">${row[2]}</text>`}).join('')}
+    <circle cx="470" cy="720" r="46" fill="none" stroke="#D95548" stroke-width="4" opacity=".65"/>
+    <text x="470" y="728" font-size="18" fill="#D95548" text-anchor="middle" font-family="sans-serif">已接种</text>
+  </svg>`;
+  return 'data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+}
+let ocrDraft=null;
+function mockOCR(src){
+  // 模拟端侧识别结果：取示例本最近一行（日期随演示台「今天」动态生成）
+  return { photo:src, kind:'vaccine', name:'猫三联', date:fmt(new Date(today().getTime()-7*86400000)),
+    place:'伴侣动物医院', cycleMonths:12, note:'识别自疫苗本照片，请核对无误后保存' };
+}
+
+/* ================= OCR 草稿确认 ================= */
+function viewOcrConfirm(){
+  const d=ocrDraft;
+  const next=addMonths(d.date, d.cycleMonths||0);
+  return `<div class="navi"><button data-act="back-camera" aria-label="返回">‹</button>
+      <span class="nv-title">核对识别结果</span><span style="width:38px"></span></div>
+    <div class="page navi-page">
+      <div class="row" style="gap:14px;margin-bottom:16px;align-items:flex-start">
+        ${d.photo?`<img class="ocr-thumb" src="${d.photo}" alt="">`:''}
+        <div style="flex:1;min-width:0"><span class="ocr-tag" style="margin-bottom:0">${icon('sparkle',13)} 已自动识别</span>
+        <p class="tiny" style="line-height:1.6;margin-top:8px">识别结果只是草稿，<br>核对无误后才会存入档案。</p></div>
+      </div>
+
+      <div class="auto-card">
+        <div class="auto-label">下次到期日 · 自动计算</div>
+        <div class="auto-date num" id="autoNext">${next}</div>
+        <p>按 ${KIND_META[d.kind].label} 默认周期 ${d.cycleMonths} 个月推算，建议周期，遵兽医医嘱。</p>
+      </div>
+
+      <div class="field"><label>类型</label>
+        <div class="seg" id="oc-kind">
+          ${['vaccine','deworm_in','deworm_out'].map(k=>`<button data-v="${k}" class="${d.kind===k?'active':''}">${icon(KIND_META[k].icon,15)} ${KIND_META[k].label}</button>`).join('')}
+      </div></div>
+      <div class="field"><label>项目名称</label><input type="text" id="oc-name" value="${esc(d.name)}"></div>
+      <div class="field"><label>执行日期</label>${dateField('oc-date',d.date,fmt(today()))}</div>
+      <div class="field"><label>周期（月）</label>
+        <div class="choice-row" id="oc-cycle">
+          ${[1,3,6,12].map(m=>`<button class="choice ${d.cycleMonths===m?'active':''}" data-c="${m}">${m} 个月</button>`).join('')}
+          <button class="choice ${![1,3,6,12].includes(d.cycleMonths)?'active':''}" data-c="custom">自定义</button>
+        </div>
+        <input type="number" min="1" id="oc-cycle-custom" style="margin-top:8px;${[1,3,6,12].includes(d.cycleMonths)?'display:none':''}" placeholder="输入月数" value="${[1,3,6,12].includes(d.cycleMonths)?'':d.cycleMonths}">
+      </div>
+      <div class="field"><label>执行地点（可不填）</label><input type="text" id="oc-place" value="${esc(d.place||'')}"></div>
+      <div style="height:6px"></div>
+      <button class="btn" id="oc-save">确认存入 · ${esc(activePet().name)}</button>
+    </div>`;
+}
+function bindOcrConfirm(){
+  const d=ocrDraft;
+  const recompute=()=>{ document.getElementById('autoNext').textContent=addMonths(d.date,d.cycleMonths||0); };
+  $screen.querySelector('#oc-kind').onclick=e=>{ const b=e.target.closest('button'); if(!b)return;
+    d.kind=b.dataset.v; d.cycleMonths=KIND_META[d.kind].defaultCycle;
+    if(NAME_PRESETS[d.kind][0]) d.name=NAME_PRESETS[d.kind][0]; render(); };
+  $screen.querySelector('#oc-name').oninput=e=>d.name=e.target.value;
+  bindDateField('oc-date',v=>{ d.date=v; recompute(); });
+  $screen.querySelector('#oc-place').oninput=e=>d.place=e.target.value;
+  $screen.querySelector('#oc-cycle').onclick=e=>{ const b=e.target.closest('button'); if(!b)return;
+    if(b.dataset.c==='custom'){ d.cycleMonths=parseInt($screen.querySelector('#oc-cycle-custom').value)||6; }
+    else d.cycleMonths=parseInt(b.dataset.c);
+    render(); };
+  const ci=$screen.querySelector('#oc-cycle-custom');
+  if(ci) ci.oninput=e=>{ d.cycleMonths=parseInt(e.target.value)||d.cycleMonths; recompute(); };
+  $screen.querySelector('#oc-save').onclick=()=>{
+    d.name=$screen.querySelector('#oc-name').value.trim()||KIND_META[d.kind].label;
+    if(!d.date){ toast('请选择执行日期'); return; }
+    addRecord({petId:activePet().id,kind:d.kind,name:d.name,date:d.date,place:d.place,
+      cycleMonths:d.cycleMonths,photo:d.photo,note:d.note||''});
+    ocrDraft=null; view.page=null; view.tab='home'; render();
+    successSheet(d.kind,d.name,addMonths(d.date,d.cycleMonths));
+  };
+}
+
+/* ================= 手动记录表单 ================= */
+let recordDraft=null;
+function viewRecordForm(){
+  const d=recordDraft||(recordDraft={kind:'vaccine',name:'',date:fmt(today()),cycleMonths:12,place:'',note:''});
+  return `<div class="navi"><button data-act="back" aria-label="返回">‹</button>
+      <span class="nv-title">疫苗 / 驱虫</span><span style="width:38px"></span></div>
+    <div class="page navi-page">
+      <div class="field"><label>类型</label>
+        <div class="seg" id="rf-kind">
+          ${['vaccine','deworm_in','deworm_out'].map(k=>`<button data-v="${k}" class="${d.kind===k?'active':''}">${icon(KIND_META[k].icon,15)} ${KIND_META[k].label}</button>`).join('')}
+      </div></div>
+      <div class="field"><label>项目名称</label>
+        <div class="choice-row" id="rf-preset">
+          ${NAME_PRESETS[d.kind].map(n=>`<button class="choice ${d.name===n?'active':''}" data-n="${n}">${n}</button>`).join('')}
+          <button class="choice ${d.name&&!NAME_PRESETS[d.kind].includes(d.name)?'active':''}" data-n="__custom">自定义</button>
+        </div>
+        <input type="text" id="rf-name" style="margin-top:8px" placeholder="输入项目名称" value="${NAME_PRESETS[d.kind].includes(d.name)?'':esc(d.name)}">
+      </div>
+      <div class="field"><label>执行日期</label>${dateField('rf-date',d.date,fmt(today()))}</div>
+      <div class="field"><label>提醒周期</label>
+        <div class="choice-row" id="rf-cycle">
+          ${[1,3,6,12].map(m=>`<button class="choice ${d.cycleMonths===m?'active':''}" data-c="${m}">${m} 个月</button>`).join('')}
+        </div>
+      </div>
+      <div class="field"><label>执行地点（可不填）</label><input type="text" id="rf-place" value="${esc(d.place)}"></div>
+      <div class="field"><label>备注</label><textarea id="rf-note" placeholder="例如：本次无不良反应">${esc(d.note)}</textarea></div>
+      <div class="auto-card"><p style="color:var(--green);font-size:12.5px;line-height:1.6">${icon('bell',14)} 保存后将在 <b class="num" id="rf-next">${addMonths(d.date,d.cycleMonths)}</b> 到期，并提前 ${Math.max(...S.settings.leadDays)} 天提醒你。</p></div>
+      <button class="btn" id="rf-save">保存记录</button>
+    </div>`;
+}
+function bindRecordForm(){
+  const d=recordDraft;
+  $screen.querySelector('#rf-kind').onclick=e=>{ const b=e.target.closest('button'); if(!b)return;
+    d.kind=b.dataset.v; d.cycleMonths=KIND_META[d.kind].defaultCycle;
+    d.name=NAME_PRESETS[d.kind][0]||''; render(); };
+  $screen.querySelector('#rf-preset').onclick=e=>{ const b=e.target.closest('button'); if(!b)return;
+    if(b.dataset.n==='__custom'){ $screen.querySelector('#rf-name').focus(); }
+    else { d.name=b.dataset.n; render(); } };
+  const recompute=()=>document.getElementById('rf-next').textContent=addMonths(d.date,d.cycleMonths);
+  $screen.querySelector('#rf-name').oninput=e=>d.name=e.target.value.trim();
+  bindDateField('rf-date',v=>{ d.date=v; recompute(); });
+  $screen.querySelector('#rf-cycle').onclick=e=>{ const b=e.target.closest('button'); if(!b)return; d.cycleMonths=+b.dataset.c; render(); };
+  $screen.querySelector('#rf-place').oninput=e=>d.place=e.target.value;
+  $screen.querySelector('#rf-note').oninput=e=>d.note=e.target.value;
+  $screen.querySelector('#rf-save').onclick=()=>{
+    d.name=$screen.querySelector('#rf-name').value.trim()||d.name||KIND_META[d.kind].label;
+    if(!d.date){ toast('请选择日期'); return; }
+    addRecord({petId:activePet().id,kind:d.kind,name:d.name,date:d.date,place:d.place,cycleMonths:d.cycleMonths,note:d.note,photo:null});
+    recordDraft=null; view.page=null; view.tab='home'; render();
+    successSheet(d.kind,d.name,addMonths(d.date,d.cycleMonths));
+  };
+}
+
+/* ================= 就诊 / 体重 ================= */
+function viewVisitForm(){
+  return `<div class="navi"><button data-act="back" aria-label="返回">‹</button>
+      <span class="nv-title">就诊记录</span><span style="width:38px"></span></div>
+    <div class="page navi-page">
+      <div class="field"><label>就诊日期</label>${dateField('vf-date',fmt(today()))}</div>
+      <div class="field"><label>事由</label><input type="text" id="vf-reason" placeholder="例如：年度体检 / 呕吐"></div>
+      <div class="field"><label>诊断摘要（仅作备忘，App 不提供医学建议）</label><textarea id="vf-diag" placeholder="记下医生说的话即可"></textarea></div>
+      <div class="field"><label>费用（元，可不填）</label><input type="number" id="vf-cost" min="0" step="0.01"></div>
+      <button class="btn" id="vf-save">保存</button>
+    </div>`;
+}
+function bindVisitForm(){
+  bindDateField('vf-date');
+  $screen.querySelector('#vf-save').onclick=()=>{
+    const reason=$screen.querySelector('#vf-reason').value.trim();
+    const date=$screen.querySelector('#vf-date').value;
+    if(!date){toast('请选择日期');return;}
+    addRecord({petId:activePet().id,kind:'visit',name:'就诊',date,
+      reason,diagnosis:$screen.querySelector('#vf-diag').value.trim(),
+      cost:parseFloat($screen.querySelector('#vf-cost').value)||null,photo:null});
+    view.page=null; view.tab='health'; render(); toast('就诊记录已保存');
+  };
+}
+function viewWeightForm(){
+  const last=S.records.filter(r=>r.petId===activePet().id&&r.kind==='weight').sort((a,b)=>b.date.localeCompare(a.date))[0];
+  return `<div class="navi"><button data-act="back" aria-label="返回">‹</button>
+      <span class="nv-title">体重记录</span><span style="width:38px"></span></div>
+    <div class="page navi-page">
+      <div class="field"><label>日期</label>${dateField('wf-date',fmt(today()))}</div>
+      <div class="field"><label>体重（kg）</label><input type="number" id="wf-val" step="0.05" min="0" placeholder="${last?'上次 '+last.weightVal+' kg':'输入体重'}" autofocus></div>
+      <p class="tiny" style="line-height:1.6;margin:-4px 4px 16px">体重曲线将在 P1 版本提供，记录先帮你存好。</p>
+      <button class="btn" id="wf-save">保存</button>
+    </div>`;
+}
+function bindWeightForm(){
+  bindDateField('wf-date');
+  $screen.querySelector('#wf-save').onclick=()=>{
+    const v=parseFloat($screen.querySelector('#wf-val').value);
+    const date=$screen.querySelector('#wf-date').value;
+    if(!isFinite(v)||v<=0){toast('请输入有效体重');return;}
+    if(!date){toast('请选择日期');return;}
+    addRecord({petId:activePet().id,kind:'weight',name:'体重 '+v+'kg',date,weightVal:v,photo:null});
+    const pet=activePet(); pet.weight=v;
+    view.page=null; view.tab='health'; save(); render(); toast('体重已记录');
+  };
+}
+
+/* ---------- 数据写入 ---------- */
+function addRecord(r){
+  S.records.push({id:uid(),done:false,nextDue:r.cycleMonths?addMonths(r.date,r.cycleMonths):null,...r});
+  save();
+}
+function successSheet(kind,name,next){
+  openSheet(`<div class="success-pop">
+    <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="#3D9970" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg></div>
+    <h3>已存入 ${esc(activePet().name)} 的档案</h3>
+    <p>${icon(KIND_META[kind].icon,16)} ${esc(name)}</p>
+    <div class="success-next">${icon('bell',14)} 已为你排好下一次：<b class="num">${next}</b><br>到期前会自动提醒，完成后再自动续期。</div>
+    <div style="height:8px"></div>
+    <button class="btn" data-act="sheet-close">好的</button>
+  </div>`);
+}
+
+/* ================= 周期操作：完成 / 改期 ================= */
+function completeRecord(id){
+  const r=S.records.find(x=>x.id===id); if(!r)return;
+  r.done=true; r.nextDue=null; // 旧记录收尾，避免与新生成的下一周期记录重复显示
+  if(r.cycleMonths){
+    const t=fmt(today());
+    S.records.push({id:uid(),petId:r.petId,kind:r.kind,name:r.name,date:t,place:r.place,
+      cycleMonths:r.cycleMonths,nextDue:addMonths(t,r.cycleMonths),note:r.note,photo:null,done:false});
+  }
+  save(); render();
+  toast('已完成，下一周期已排好');
+}
+function openReschedule(id){
+  const r=S.records.find(x=>x.id===id);
+  openSheet(`<h3>改期 · ${esc(r.name)}</h3>
+    <p class="tiny" style="margin:-6px 2px 12px">调整后将按新日期重新安排提醒。</p>
+    <div class="field"><label>新的到期日</label>${dateField('rs-date',r.nextDue,null,fmt(today()))}</div>
+    <button class="btn" id="rs-save">保存改期</button>
+    <div style="height:10px"></div>
+    <button class="btn ghost" data-act="sheet-close">取消</button>`);
+  bindDateField('rs-date');
+  document.getElementById('rs-save').onclick=()=>{
+    const v=document.getElementById('rs-date').value;
+    if(!v)return;
+    r.nextDue=v;
+    Object.keys(S.fired).forEach(k=>{ if(k.startsWith(r.id+':')) delete S.fired[k]; });
+    save(); closeSheet(); render(); toast('已改期');
+  };
+}
+
+/* ================= 出示模式（全屏覆盖层） ================= */
+/* 遮罩自带状态栏，避免原生状态栏穿透；打开时隐藏推送横幅 */
+const OV_STATUSBAR=`<div class="ov-statusbar"><span>9:41</span><span class="sb-icons">${document.querySelector('.statusbar .sb-icons').innerHTML}</span></div>`;
+function hidePush(){ document.getElementById('pushBanner').hidden=true; }
+function openPresent(){
+  const pet=activePet();
+  const cert=S.records.filter(r=>r.petId===pet.id && (r.kind==='vaccine'||r.kind==='deworm_in'||r.kind==='deworm_out'))
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  hidePush();
+  const ov=document.createElement('div');
+  ov.className='present';
+  ov.innerHTML=`${OV_STATUSBAR}
+    <button style="position:absolute;top:12px;right:20px;width:36px;height:36px;border-radius:50%;background:#fff;border:1px solid var(--hairline);font-size:16px;z-index:2" data-act="close-overlay">✕</button>
+    <div class="present-head">
+      <span class="avatar lg ${SPECIES_META[pet.species].cls}">${icon(SPECIES_META[pet.species].icon,28)}</span>
+      <div><h2>${esc(pet.name)} 的健康记录</h2>
+        <div class="p-sub">${SPECIES_META[pet.species].label}${pet.breed?' · '+esc(pet.breed):''}${pet.birthday?' · 生于 '+pet.birthday:''}</div></div>
+    </div>
+    <table>
+      <thead><tr><th>日期</th><th>项目</th><th>地点</th><th>下次到期</th></tr></thead>
+      <tbody>${cert.map(r=>`<tr>
+        <td class="date">${r.date}</td>
+        <td>${icon(KIND_META[r.kind].icon,14)} ${esc(r.name)}</td>
+        <td>${esc(r.place||'—')}</td>
+        <td class="date">${r.nextDue||'—'}</td></tr>`).join('')
+        ||'<tr><td colspan="4" style="text-align:center;color:var(--ink-3);padding:24px">暂无免疫记录</td></tr>'}</tbody>
+    </table>
+    <div class="p-stamp">记录与本人一致</div>
+    <div class="p-disclaimer">本记录由宠物主人自行维护，仅供寄养 / 托运 / 就诊参考。<br>所有周期为建议值，具体免疫方案请遵执业兽医医嘱。<br>导出时间：${fmt(today())} · 宠物健康本</div>`;
+  ov.onclick=e=>{ if(e.target.closest('[data-act="close-overlay"]')){ ov.remove(); view.tab='home'; render(); } };
+  $device.appendChild(ov);
+}
+
+/* ================= 付费墙（全屏覆盖层） ================= */
+function openPaywall(){
+  hidePush();
+  const ov=document.createElement('div');
+  ov.className='paywall';
+  ov.innerHTML=`${OV_STATUSBAR}
+    <button class="pw-close" data-act="close-overlay" aria-label="关闭">✕</button>
+    <div class="pw-emoji">${icon('paw',52)}</div>
+    <h2>一次买断，陪它一辈子</h2>
+    <p class="pw-lead">没有订阅，没有续费，没有广告。<br>买一次，所有宠物、所有功能永久可用。</p>
+    <div class="pw-feats">
+      <div class="pw-feat"><span class="tick">✓</span><div>不限宠物数量<small>多猫多狗家庭，每只都有独立档案</small></div></div>
+      <div class="pw-feat"><span class="tick">✓</span><div>桌面小组件<small>「距驱虫还有 N 天」常驻桌面</small></div></div>
+      <div class="pw-feat"><span class="tick">✓</span><div>导出长图 / PDF<small>即将上线，买断即享</small></div></div>
+      <div class="pw-feat"><span class="tick">✓</span><div>无限疫苗本照片附件</div></div>
+    </div>
+    <div class="pw-price"><div class="big num">¥48</div><div class="once">一次付费 · 不再收费 · 永久免费更新</div></div>
+    <div class="pw-foot">
+      <button class="btn" id="pw-buy">立即买断</button>
+      <button class="restore" id="pw-restore">恢复购买</button>
+      <p class="fine">原型环境为模拟内购，不会产生真实扣费。<br>付费后免费版已录入的 1 只宠物数据不会被锁定。</p>
+    </div>`;
+  $device.appendChild(ov);
+  const close=()=>{ ov.remove(); };
+  ov.onclick=e=>{ if(e.target.closest('[data-act="close-overlay"]')){ close(); pendingAction=null; render(); } };
+  ov.querySelector('#pw-restore').onclick=()=>{
+    S.purchased=true; save(); close(); toast('已恢复购买 ✓');
+    if(pendingAction){ const a=pendingAction; pendingAction=null; a(); } else render();
+  };
+  ov.querySelector('#pw-buy').onclick=e=>{
+    const btn=e.currentTarget; btn.disabled=true; btn.textContent='正在通过 App Store 验证…';
+    setTimeout(()=>{
+      S.purchased=true; save();
+      btn.innerHTML='✓ 买断成功'; btn.style.background='var(--green)';
+      setTimeout(()=>{ close();
+        if(pendingAction){ const a=pendingAction; pendingAction=null; a(); } else render();
+      },800);
+    },1100);
+  };
+}
+
+/* ================= Sheet 工具 ================= */
+const $sheet=document.getElementById('sheet'), $mask=document.getElementById('sheetMask');
+function openSheet(html){
+  $sheet.innerHTML=`<div class="sheet-handle"></div>${html}`;
+  $sheet.hidden=false; $mask.hidden=false;
+}
+function closeSheet(saveNeeded){
+  $sheet.hidden=true; $mask.hidden=true; $sheet.innerHTML='';
+}
+$mask.addEventListener('click',()=>closeSheet());
+
+/* ================= 全局事件 ================= */
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-act]');
+  if(!t) return;
+  const act=t.dataset.act, id=t.dataset.id;
+  switch(act){
+    case 'back': view.page=null; render(); break;
+    case 'back-camera': view.page='camera'; render(); break;
+    case 'sheet-close': closeSheet(); break;
+    case 'tab': view.tab=t.dataset.tab; view.page=null; render(); break;
+    case 'add-menu': openAddMenu(); break;
+    case 'go-camera': closeSheet(); view.page='camera'; render(); break;
+    case 'go-record': closeSheet(); recordDraft=null; view.page='recordForm'; render(); break;
+    case 'go-visit': closeSheet(); view.page='visitForm'; render(); break;
+    case 'go-weight': closeSheet(); view.page='weightForm'; render(); break;
+    case 'complete': completeRecord(id); break;
+    case 'reschedule': openReschedule(id); break;
+    case 'del-record': {
+      S.records=S.records.filter(x=>x.id!==id);
+      Object.keys(S.fired).forEach(k=>{ if(k.startsWith(id+':')) delete S.fired[k]; });
+      save(); render(); toast('已删除'); break; }
+    case 'add-pet':
+      if(!S.purchased && S.pets.length>=1){ pendingAction=()=>{ petFormMode='create'; petDraft={}; view.page='petForm'; render(); }; openPaywall(); }
+      else { petFormMode='create'; petDraft={}; view.page='petForm'; render(); }
+      break;
+    case 'edit-pet': petFormMode='edit'; petFormEditingId=id; petDraft={...S.pets.find(p=>p.id===id)}; view.page='petForm'; render(); break;
+    case 'paywall': pendingAction=null; openPaywall(); break;
+    case 'toggle-notify': S.settings.notify=!S.settings.notify; save(); render(); break;
+    case 'enable-notify': S.settings.notify=true; save(); render(); toast('通知已开启'); break;
+    case 'toggle-lead': {
+      const d=+t.dataset.d, arr=S.settings.leadDays;
+      const i=arr.indexOf(d); i>=0?arr.splice(i,1):arr.push(d);
+      if(!arr.length) arr.push(7);
+      save(); render(); break; }
+  }
+});
+/* 宠物切换 */
+$screen.addEventListener('click',e=>{
+  const t=e.target.closest('[data-pet]');
+  if(t){ view.activePetId=t.dataset.pet; render(); }
+},true);
+
+/* ESC 关闭弹层 / 全屏遮罩 */
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape') return;
+  if(!$sheet.hidden){ closeSheet(); return; }
+  const overlay=document.querySelector('.present,.paywall');
+  if(overlay){
+    if(overlay.classList.contains('present') && view.tab==='present') view.tab='home';
+    closeOverlay(); pendingAction=null; render();
+  }
+});
+
+function bindCommon(){ /* 预留：各页内联绑定已在视图函数处理 */ }
+
+/* ================= 桌面验证台 ================= */
+function updateConsole(){
+  document.getElementById('demoDate').textContent=fmt(today())+'（第 '+(S.offsetDays>=0?'+':'')+S.offsetDays+' 天）';
+}
+document.getElementById('flowList').onclick=e=>{
+  const b=e.target.closest('[data-flow]'); if(!b)return;
+  closeOverlay();
+  const f=b.dataset.flow;
+  if(f==='onboarding'){ resetAll(false); render(); return; }
+  if(!S.onboarded || !S.pets.length) loadSample(false);
+  view.page=null; view.tab='home'; view.activePetId=S.pets[0].id;
+  if(f==='record-ocr'){ view.page='camera'; render(); return; }
+  if(f==='reminder'){
+    // 重置 fired，确保横幅重新演示
+    S.fired={}; S.offsetDays=5; save(); render(); return;
+  }
+  if(f==='present'){ save(); render(); setTimeout(openPresent,60); return; }
+  if(f==='paywall'){ save(); render();
+    // 买断成功后继续进入「添加第 2 只宠物」表单，补齐演示链路
+    setTimeout(()=>{ if(!S.purchased && S.pets.length>=1){ pendingAction=()=>{ petFormMode='create'; petDraft={}; view.page='petForm'; render(); }; } openPaywall(); },60);
+    return; }
+  render();
+};
+document.querySelectorAll('.chip[data-days]').forEach(b=>{
+  b.onclick=()=>{
+    const v=b.dataset.days;
+    if(v==='reset') S.offsetDays=0; else S.offsetDays+=+v;
+    save(); render();
+  };
+});
+document.getElementById('loadSample').onclick=()=>loadSample(true);
+document.getElementById('resetAll').onclick=()=>resetAll(true);
+
+function closeOverlay(){ document.querySelectorAll('.present,.paywall').forEach(el=>el.remove()); }
+
+/* ---------- 示例数据：布丁 ---------- */
+function loadSample(doRender=true){
+  const t=today();
+  const iso=fmt(t);
+  const pet={id:'sample-pet',name:'布丁',species:'cat',breed:'英国短毛猫',
+    birthday:fmt(new Date(t.getFullYear()-2,t.getMonth()-3,10)),gender:'female',weight:4.2};
+  const mk=(id,kind,name,date,cycle,extra={})=>({id,petId:pet.id,kind,name,date,
+    nextDue:cycle?addMonths(date,cycle):null,cycleMonths:cycle,done:false,...extra});
+  S={...defaultState(),onboarded:true,
+    pets:[pet],
+    records:[
+      mk('r1','deworm_out','体外驱虫滴剂',fmt(new Date(t.getTime()-26*86400000)),1,{place:'家 · 自行上药'}),
+      mk('r2','vaccine','猫三联',fmt(new Date(t.getTime()-7*86400000)),12,{place:'伴侣动物医院',photo:sampleBookURI()}),
+      mk('r3','deworm_in','体内驱虫药',fmt(new Date(t.getTime()-65*86400000)),3,{place:'伴侣动物医院'}),
+      mk('r4','vaccine','狂犬疫苗',fmt(new Date(t.getTime()-400*86400000)),12,{done:true,nextDue:null,place:'伴侣动物医院'}),
+      {id:'r5',petId:pet.id,kind:'visit',name:'年度体检',date:fmt(new Date(t.getTime()-7*86400000)),
+        reason:'年度体检',diagnosis:'一切正常，建议控制体重',cost:480,photo:null,done:false,nextDue:null,cycleMonths:0},
+      {id:'r6',petId:pet.id,kind:'weight',name:'体重 4.2kg',date:fmt(new Date(t.getTime()-7*86400000)),weightVal:4.2,photo:null,done:false,nextDue:null,cycleMonths:0},
+    ],
+    fired:{}};
+  view.activePetId=pet.id; view.page=null; view.tab='home';
+  save(); if(doRender) render();
+}
+function resetAll(doRender=true){
+  S=defaultState(); view={tab:'home',page:null,activePetId:null};
+  localStorage.removeItem(STORE_KEY);
+  closeOverlay();
+  if(doRender) render();
+}
+
+/* ---------- 启动 ---------- */
+if(S.onboarded && S.pets.length && !view.activePetId) view.activePetId=S.pets[0].id;
+render();
+
+</script>
+</body>
+</html>
